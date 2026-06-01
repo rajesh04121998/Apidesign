@@ -1,0 +1,61 @@
+Search Service
+→ User sends query ("Python Course")
+→ Searcher receives query
+→ Searcher looks into Index
+→ Returns best matching results
+
+Indexer
+→ Reads data from DB
+→ Creates Index (keyword → document mapping)
+→ Example: Python → [Doc1, Doc4]
+→ Makes search fast
+
+Searcher
+→ Parses query
+→ Finds keywords in Index
+→ Ranks results
+→ Example: Search "Python" → Returns Doc1, Doc4
+
+Sorting
+→ Arrange results by Price, Date, Rating
+→ Example: sort=price_desc
+
+Pagination
+→ Split huge results into pages
+→ Example: Page1=1-10, Page2=11-20
+→ Reduces payload & latency
+
+Skip-Limit
+→ skip=10&limit=10
+→ Good for small datasets
+→ Can jump to any page
+→ Slow for large datasets
+
+Cursor Pagination
+→ Uses last record as pointer
+→ Example: cursor=500
+→ Best for infinite scrolling
+→ Cannot jump directly to page 100
+
+Bucket Pattern
+→ Group records into buckets
+→ Skip buckets instead of records
+→ Fast on large datasets
+→ Supports random page navigation
+
+Best Practices
+→ Query length limit (e.g., 200 chars)
+→ Query timeout (e.g., 2 sec)
+→ Return partial results if timeout occurs
+→ Use indexing for low latency
+
+
+Availability = Don't crash
+Scalability = Handle growth
+Security = Protect users
+Low Latency = Respond fast
+Caching = Biggest performance booster
+Circuit Breaker = Prevent chain failures
+Pagination = Reduce payload
+Timeout = Prevent expensive queries
+Latency Budget = Measure where time is spent
