@@ -1,0 +1,598 @@
+
+=========================================================
+FILE STORAGE API DESIGN - ONE PAGE CHEAT SHEET
+=========================================================
+
+PURPOSE
+-------
+Build a service like Google Drive, Dropbox, OneDrive where users can:
+
+✓ Upload Files
+✓ Download Files
+✓ List Files
+✓ Delete Files
+
+---------------------------------------------------------
+FUNCTIONAL REQUIREMENTS
+---------------------------------------------------------
+
+Upload    -> Store files in cloud
+Download  -> Retrieve files
+List      -> Show user uploaded files
+Delete    -> Remove files
+
+Key Points:
+- Only owner can delete
+- Authenticated users only
+- Support large files
+
+---------------------------------------------------------
+NON-FUNCTIONAL REQUIREMENTS
+---------------------------------------------------------
+
+Reliability  -> No data loss
+Security     -> Secure access
+Scalability  -> Handle millions of files
+Availability -> Service always accessible
+Low Latency  -> Fast upload/download
+
+Key Points:
+- Replication
+- Backup
+- Encryption
+- CDN
+- Rate Limiting
+
+---------------------------------------------------------
+HIGH LEVEL ARCHITECTURE
+---------------------------------------------------------
+
+Client
+  |
+  v
+API Gateway
+  |
+  v
+File Service
+  |
+-------------------------------------------------
+|           |             |                    |
+UFMS      SQL DB     Temp Storage      Blob Storage
+                                      |
+                                      v
+                                     CDN
+
+Component Responsibilities:
+
+API Gateway
+→ Authentication
+→ Authorization
+→ Routing
+→ Rate Limiting
+
+File Service
+→ Handle Upload/Download
+→ Split Metadata & File Content
+
+UFMS (User File Mapping Service)
+→ User ↔ File Mapping
+→ File ↔ Storage Location Mapping
+
+SQL Database
+→ Store Metadata
+
+Blob Storage
+→ Store Actual File Bytes
+
+CDN
+→ Fast Downloads
+
+Temp Storage
+→ Store file before processing
+
+Processing Server
+→ Compression
+→ Encryption
+→ Virus Scan
+→ Thumbnail Generation
+
+---------------------------------------------------------
+WHY SEPARATE METADATA & FILE CONTENT?
+---------------------------------------------------------
+
+Metadata (SQL)
+
+File Name
+Owner ID
+File Size
+Timestamp
+Storage Path
+
+Content (Blob Storage)
+
+PDF
+Video
+Image
+ZIP
+
+Reason:
+→ Faster Queries
+→ Smaller Database
+→ Better Scalability
+→ Lower Cost
+
+---------------------------------------------------------
+COMMUNICATION STYLE
+---------------------------------------------------------
+
+Client → API Gateway
+
+REST
+
+Reason:
+→ Standard HTTP
+→ Browser Friendly
+→ CRUD Operations
+→ Easy Integration
+
+Gateway → Internal Services
+
+gRPC (Industry)
+REST (Course)
+
+Reason:
+→ Faster
+→ Binary Protocol
+→ Lower Network Cost
+
+---------------------------------------------------------
+DATA FORMAT
+---------------------------------------------------------
+
+Metadata
+→ JSON
+
+Example:
+
+{
+  "fileName":"resume.pdf",
+  "ownerId":"123"
+}
+
+File Content
+→ Binary
+
+Reason:
+→ JSON is readable
+→ Binary is efficient
+
+---------------------------------------------------------
+DATABASE DESIGN
+---------------------------------------------------------
+
+Files Table
+
+file_id
+owner_id
+file_name
+file_size
+storage_path
+status
+created_at
+
+Example:
+
+123
+Rajesh
+resume.pdf
+2MB
+s3://bucket/file.pdf
+ACTIVE
+
+---------------------------------------------------------
+API ENDPOINTS
+---------------------------------------------------------
+
+UPLOAD
+
+POST /api/v1/files
+
+Request:
+Metadata(JSON)
++
+File(Binary)
+
+Response:
+
+{
+  "fileId":"123",
+  "status":"uploaded"
+}
+
+---------------------------------------------------------
+
+LIST FILES
+
+GET /api/v1/files
+
+Response:
+
+[
+  {
+    "id":"123",
+    "name":"resume.pdf"
+  }
+]
+
+---------------------------------------------------------
+
+DOWNLOAD FILE
+
+GET /api/v1/files/{fileId}
+
+Response:
+Actual File Content
+
+---------------------------------------------------------
+
+DELETE FILE
+
+DELETE /api/v1/files/{fileId}
+
+Response:
+204 No Content
+
+---------------------------------------------------------
+UPLOAD WORKFLOW
+---------------------------------------------------------
+
+User Selects File
+      |
+Authentication
+      |
+Authorization
+      |
+Upload To Temp Storage
+      |
+Processing
+      |
+Compression
+      |
+Encryption
+      |
+Store In Blob Storage
+      |
+Save Metadata In SQL
+      |
+Return Success
+
+Key Points:
+→ Metadata → SQL
+→ File → Blob Storage
+
+---------------------------------------------------------
+DOWNLOAD WORKFLOW
+---------------------------------------------------------
+
+Client Request
+      |
+Authentication
+      |
+Metadata Lookup
+      |
+Get Storage Path
+      |
+Fetch File
+      |
+CDN (if available)
+      |
+Return File
+
+Key Points:
+→ Use CDN for faster delivery
+→ Stream large files
+
+---------------------------------------------------------
+DELETE WORKFLOW
+---------------------------------------------------------
+
+Verify Owner
+      |
+Delete Blob Storage Object
+      |
+Delete Metadata
+      |
+Return 204
+
+Alternative:
+→ Soft Delete
+→ status = DELETED
+
+---------------------------------------------------------
+SECURITY
+---------------------------------------------------------
+
+Authentication
+
+JWT
+OAuth2
+OIDC
+
+Authorization
+
+Check Ownership
+
+Example:
+
+Can Rajesh access File123?
+
+If No:
+403 Forbidden
+
+Encryption
+
+At Rest
+→ AES
+
+In Transit
+→ HTTPS/TLS
+
+Integrity
+
+MD5
+SHA256
+Checksum Verification
+
+Purpose:
+→ Detect Corruption
+
+---------------------------------------------------------
+ERROR CODES
+---------------------------------------------------------
+
+200 -> Success
+204 -> Deleted
+401 -> Unauthorized
+403 -> Forbidden
+404 -> Not Found
+413 -> Payload Too Large
+415 -> Unsupported Media Type
+500 -> Server Error
+
+---------------------------------------------------------
+RELIABILITY
+---------------------------------------------------------
+
+Techniques
+
+Replication
+Backup
+Multi Region Storage
+Monitoring
+Circuit Breakers
+
+Goal
+
+No Data Loss
+No Single Point Failure
+
+---------------------------------------------------------
+SCALABILITY
+---------------------------------------------------------
+
+Metadata → SQL
+
+Files → Blob Storage
+
+Scale Separately
+
+Examples:
+
+PostgreSQL
+Cloud SQL
+Spanner
+
+S3
+GCS
+Azure Blob
+
+---------------------------------------------------------
+AVAILABILITY
+---------------------------------------------------------
+
+Load Balancer
+Multiple API Servers
+Rate Limiting
+Quota Management
+No SPOF
+
+Goal:
+99.9%+ Availability
+
+---------------------------------------------------------
+LOW LATENCY
+---------------------------------------------------------
+
+Uploads
+→ Temp Storage
+
+Downloads
+→ CDN
+
+Networking
+→ HTTP/2
+
+Processing
+→ Stream Encryption
+
+---------------------------------------------------------
+LARGE FILE UPLOAD PROBLEM
+---------------------------------------------------------
+
+Example:
+1 GB File
+
+Connection Lost At 900 MB
+
+Without Chunking:
+→ Restart Upload
+
+Bad Experience
+
+---------------------------------------------------------
+CHUNK UPLOAD SOLUTION
+---------------------------------------------------------
+
+1 GB File
+
+100 MB
+100 MB
+100 MB
+100 MB
+...
+
+Benefits
+
+✓ Resume Upload
+✓ Parallel Upload
+✓ Faster
+✓ Reliable
+
+---------------------------------------------------------
+RESUMABLE UPLOAD
+---------------------------------------------------------
+
+Chunk1 Uploaded
+Chunk2 Uploaded
+Connection Lost
+        |
+HEAD Request
+        |
+Find Last Chunk
+        |
+Continue Upload
+
+HTTP Status
+
+308 Resume Incomplete
+
+---------------------------------------------------------
+CDN
+---------------------------------------------------------
+
+Without CDN
+
+User → Storage
+
+With CDN
+
+User → Nearest CDN
+
+Benefits
+
+✓ Faster Downloads
+✓ Lower Latency
+✓ Reduced Storage Load
+
+---------------------------------------------------------
+ASYNC PROCESSING
+---------------------------------------------------------
+
+Upload Complete
+        |
+Message Queue
+        |
+Workers
+
+Tasks
+
+OCR
+Thumbnail
+Compression
+AI Processing
+Virus Scan
+
+Technologies
+
+Kafka
+Pub/Sub
+RabbitMQ
+SQS
+
+---------------------------------------------------------
+INTERVIEW QUESTIONS
+---------------------------------------------------------
+
+Why Blob Storage?
+→ Cheap + Durable + Scalable
+
+Why Separate Metadata?
+→ Fast Queries + Better Scaling
+
+Why CDN?
+→ Faster Downloads
+
+Why Chunk Upload?
+→ Resume + Reliability
+
+Why JSON?
+→ Human Readable
+
+Why REST?
+→ Simple Resource Based CRUD
+
+Why Encryption?
+→ Data Protection
+
+Why Checksum?
+→ Detect Corruption
+
+---------------------------------------------------------
+30 SECOND REVISION
+---------------------------------------------------------
+
+REST API
+     |
+API Gateway
+     |
+File Service
+     |
+Metadata -> SQL
+Files -> Blob Storage
+     |
+CDN
+
+Operations:
+POST   /files
+GET    /files
+GET    /files/{id}
+DELETE /files/{id}
+
+Security:
+JWT
+OAuth2
+AES
+HTTPS
+Checksum
+
+Scalability:
+Blob Storage
+CDN
+Queue
+Chunk Upload
+
+Reliability:
+Replication
+Backups
+Monitoring
+
+Large Files:
+Chunk Upload
+Resumable Upload
+308 Resume Incomplete
+
+Metadata -> SQL
+Content  -> Blob Storage
+
+This single sheet covers 90%+ of File Storage API system design interviews.
+=========================================================
