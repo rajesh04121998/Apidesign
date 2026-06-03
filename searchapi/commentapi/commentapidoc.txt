@@ -1,0 +1,823 @@
+====================================================================
+COMMENT API DESIGN - COMPLETE SYSTEM DESIGN CHEAT SHEET
+====================================================================
+
+PURPOSE
+-------
+Build a service like:
+
+Facebook Comments
+Instagram Comments
+YouTube Comments
+LinkedIn Comments
+Reddit Comments
+
+Users can:
+
+✓ Create Comment
+✓ Edit Comment
+✓ Get Comments
+✓ Delete Comment
+✓ Flag Comment
+✓ Threaded Replies (Optional)
+
+--------------------------------------------------------------------
+FUNCTIONAL REQUIREMENTS
+--------------------------------------------------------------------
+
+Create Comment
+→ User can post comment on a post
+
+Update Comment
+→ User can edit own comment
+
+Get Comment(s)
+→ Retrieve comments for a post
+
+Delete Comment
+→ Remove own comment
+
+Flag Comment
+→ Report inappropriate content
+
+Optional Features
+
+Reply To Comment
+Like Comment
+Pin Comment
+Mention User
+Media Comments
+
+--------------------------------------------------------------------
+NON-FUNCTIONAL REQUIREMENTS
+--------------------------------------------------------------------
+
+Scalability
+→ Millions of comments/day
+
+Availability
+→ Service always accessible
+
+Security
+→ Only authorized actions
+
+Reliability
+→ No data loss
+
+Low Latency
+→ Comments visible quickly
+
+--------------------------------------------------------------------
+HIGH LEVEL ARCHITECTURE
+--------------------------------------------------------------------
+
+Client
+   |
+   v
+API Gateway
+   |
+   v
+Comment Service
+   |
+------------------------------------------------
+|                      |                       |
+User Service      Post Service           Cache
+|                      |
+User DB            Post DB
+|
+Comment DB
+
+Components
+
+API Gateway
+→ Authentication
+→ Authorization
+→ Rate Limiting
+→ Routing
+
+Comment Service
+→ CRUD Operations
+→ Comment Validation
+→ Comment Processing
+
+User Service
+→ User Information
+→ User Validation
+
+Post Service
+→ Verify Post Exists
+→ Retrieve Post Metadata
+
+Comment DB
+→ Store Comments
+
+Cache
+→ Top Comments
+→ Viral Posts
+
+--------------------------------------------------------------------
+COMMUNICATION STYLE
+--------------------------------------------------------------------
+
+Client → API Gateway
+
+REST
+
+Reason
+
+CRUD Operations
+Simple Resource Access
+Easy Integration
+
+Example
+
+POST /comments
+GET /comments
+PUT /comments/{id}
+DELETE /comments/{id}
+
+------------------------------------------------
+
+Gateway → Internal Services
+
+REST (Course Decision)
+
+Reason
+
+Simple Resource Access
+Structured Data
+Low Complexity
+
+Industry Alternative
+
+gRPC
+
+When:
+
+Heavy Internal Communication
+Microservices Architecture
+
+--------------------------------------------------------------------
+DATA FORMAT
+--------------------------------------------------------------------
+
+JSON
+
+Reason
+
+Human Readable
+Easy Debugging
+REST Friendly
+
+Example
+
+{
+  "commentText":"Great post!"
+}
+
+Not XML
+
+Reason
+
+Large Payload
+More Complex
+
+Not Binary
+
+Reason
+
+No Large Media Transfer
+Hard To Debug
+
+--------------------------------------------------------------------
+HTTP VERSION
+--------------------------------------------------------------------
+
+HTTP/1.1
+
+Reason
+
+Simple CRUD
+Reliable
+Industry Standard
+
+HTTP/2
+
+Use When
+
+Live Comments
+Heavy Traffic
+Multiplexing Required
+
+HTTP/3
+
+Future Option
+
+Faster
+QUIC Based
+
+--------------------------------------------------------------------
+DATABASE DESIGN
+--------------------------------------------------------------------
+
+COMMENTS TABLE
+
+comment_id
+post_id
+user_id
+parent_comment_id
+comment_text
+status
+created_at
+updated_at
+
+Example
+
+101
+POST_1
+USER_5
+NULL
+Great article!
+ACTIVE
+2026-06-03
+
+--------------------------------------------------------------------
+WHY RELATIONAL DATABASE?
+--------------------------------------------------------------------
+
+Comments Are Structured
+
+Comment
+  |
+User
+  |
+Post
+
+Easy Relationships
+
+Example
+
+SELECT *
+FROM comments
+WHERE post_id='123'
+
+Good Choices
+
+PostgreSQL
+MySQL
+Cloud SQL
+
+--------------------------------------------------------------------
+COMMENT DATA MODEL
+--------------------------------------------------------------------
+
+{
+  "commentId":"123",
+  "postId":"456",
+  "userId":"789",
+  "text":"Amazing Post!",
+  "createdAt":"2026-06-03",
+  "updatedAt":"2026-06-03",
+  "status":"ACTIVE"
+}
+
+--------------------------------------------------------------------
+CREATE COMMENT API
+--------------------------------------------------------------------
+
+POST /api/v1/comments
+
+Request
+
+{
+  "postId":"123",
+  "userId":"456",
+  "comment":"Amazing Post!"
+}
+
+Response
+
+{
+  "commentId":"789",
+  "status":"CREATED"
+}
+
+Workflow
+
+Validate User
+      |
+Validate Post
+      |
+Save Comment
+      |
+Update Cache
+      |
+Return Success
+
+--------------------------------------------------------------------
+GET COMMENTS API
+--------------------------------------------------------------------
+
+GET /api/v1/posts/{postId}/comments
+
+Response
+
+[
+ {
+   "commentId":"1",
+   "text":"Great Post!"
+ },
+ {
+   "commentId":"2",
+   "text":"Helpful Content!"
+ }
+]
+
+Workflow
+
+Check Cache
+     |
+Cache Hit ?
+     |
+Return Comments
+     |
+Else DB Query
+     |
+Cache Result
+     |
+Return
+
+--------------------------------------------------------------------
+GET SINGLE COMMENT
+--------------------------------------------------------------------
+
+GET /api/v1/comments/{commentId}
+
+Response
+
+{
+  "commentId":"123",
+  "text":"Nice article"
+}
+
+--------------------------------------------------------------------
+UPDATE COMMENT API
+--------------------------------------------------------------------
+
+PUT /api/v1/comments/{commentId}
+
+Request
+
+{
+  "text":"Updated Comment"
+}
+
+Workflow
+
+Verify Owner
+      |
+Update Comment
+      |
+Invalidate Cache
+      |
+Return Success
+
+Response
+
+200 OK
+
+--------------------------------------------------------------------
+DELETE COMMENT API
+--------------------------------------------------------------------
+
+DELETE /api/v1/comments/{commentId}
+
+Workflow
+
+Verify Owner
+      |
+Soft Delete
+      |
+Invalidate Cache
+      |
+Return 204
+
+Preferred
+
+Soft Delete
+
+Reason
+
+Audit
+Recovery
+Moderation
+
+Example
+
+status = DELETED
+
+--------------------------------------------------------------------
+FLAG COMMENT API
+--------------------------------------------------------------------
+
+POST /api/v1/comments/{id}/flag
+
+Request
+
+{
+  "reason":"Spam"
+}
+
+Response
+
+{
+  "status":"FLAGGED"
+}
+
+Workflow
+
+Receive Report
+      |
+Store Flag
+      |
+Moderation Queue
+      |
+Review Team
+
+--------------------------------------------------------------------
+THREADING (REPLIES)
+--------------------------------------------------------------------
+
+Comment
+ |
+ +-- Reply
+ |
+ +-- Reply
+ |
+     +-- Reply
+
+Database
+
+parent_comment_id
+
+Example
+
+Comment A
+ id=1
+
+Reply
+ parent_id=1
+
+Reply
+ parent_id=1
+
+--------------------------------------------------------------------
+COMMENT CREATION WORKFLOW
+--------------------------------------------------------------------
+
+Client
+  |
+API Gateway
+  |
+Authentication
+  |
+Comment Service
+  |
+Validate User
+  |
+Validate Post
+  |
+Save Comment
+  |
+Update Cache
+  |
+Notify Followers
+  |
+Return Success
+
+--------------------------------------------------------------------
+SCALABILITY
+--------------------------------------------------------------------
+
+Stateless APIs
+
+Reason
+
+Easy Horizontal Scaling
+
+Example
+
+Server1
+Server2
+Server3
+Server4
+
+Load Balancer
+
+Distributes Requests
+
+--------------------------------------------------------------------
+ASYNC PROCESSING
+--------------------------------------------------------------------
+
+Create Comment
+      |
+Message Queue
+      |
+Workers
+
+Tasks
+
+Notification
+Analytics
+Moderation
+Spam Detection
+
+Technologies
+
+Kafka
+Pub/Sub
+RabbitMQ
+SQS
+
+Reason
+
+Fast User Response
+
+--------------------------------------------------------------------
+AVAILABILITY
+--------------------------------------------------------------------
+
+Multiple API Gateways
+
+Load Balancer
+
+Monitoring
+
+Auto Recovery
+
+Rate Limiting
+
+No Single Point Of Failure
+
+Goal
+
+99.9%+
+
+--------------------------------------------------------------------
+SECURITY
+--------------------------------------------------------------------
+
+Authentication
+
+OAuth2
+OIDC
+JWT
+
+Authorization
+
+Only Owner Can
+
+Edit Comment
+Delete Comment
+
+Example
+
+Rajesh owns Comment123
+
+✓ Edit
+
+Another User
+
+✗ Edit
+
+403 Forbidden
+
+--------------------------------------------------------------------
+RELIABILITY
+--------------------------------------------------------------------
+
+Replication
+
+Database Replicas
+
+Circuit Breakers
+
+Retry Logic
+
+Backups
+
+Disaster Recovery
+
+Goal
+
+No Data Loss
+
+--------------------------------------------------------------------
+LOW LATENCY
+--------------------------------------------------------------------
+
+Top Comments Cache
+
+Example
+
+Top 10 Comments
+
+Stored In Redis
+
+Benefits
+
+Fast Retrieval
+
+------------------------------------------------
+
+Geographical Servers
+
+India Users
+→ India Server
+
+US Users
+→ US Server
+
+------------------------------------------------
+
+Async Processing
+
+User Doesn't Wait
+
+--------------------------------------------------------------------
+CACHING STRATEGY
+--------------------------------------------------------------------
+
+L1 Cache
+
+API Gateway Cache
+
+Example
+
+Popular Comment Requests
+
+------------------------------------------------
+
+L2 Cache
+
+Redis
+
+Example
+
+Top 10 Comments
+
+------------------------------------------------
+
+Database Cache
+
+Query Results
+
+Example
+
+Most Commented Posts
+
+--------------------------------------------------------------------
+HOT POST STRATEGY
+--------------------------------------------------------------------
+
+Viral Post
+
+10 Million Comments
+
+Solution
+
+Cache Top Comments
+
+Store Recent Comments In Redis
+
+Paginate Older Comments
+
+--------------------------------------------------------------------
+ERROR CODES
+--------------------------------------------------------------------
+
+200 OK
+201 Created
+204 Deleted
+
+400 Bad Request
+401 Unauthorized
+403 Forbidden
+404 Not Found
+409 Conflict
+429 Too Many Requests
+500 Internal Server Error
+
+--------------------------------------------------------------------
+INTERVIEW QUESTIONS
+--------------------------------------------------------------------
+
+Why REST?
+→ CRUD Operations
+
+Why Relational DB?
+→ Structured Data
+
+Why Cache?
+→ Faster Reads
+
+Why Async Processing?
+→ Better Scalability
+
+Why Soft Delete?
+→ Recovery + Auditing
+
+Why Rate Limiting?
+→ Prevent Abuse
+
+Why OAuth?
+→ Secure Authentication
+
+Why Top Comments Cache?
+→ Low Latency
+
+Why Stateless APIs?
+→ Easy Scaling
+
+--------------------------------------------------------------------
+SYSTEM DESIGN SCALING
+--------------------------------------------------------------------
+
+100 Users
+→ Single DB
+
+10K Users
+→ Cache + Read Replicas
+
+1M Users
+→ Sharding + Redis
+
+100M Users
+→ Global Databases
+→ Distributed Caching
+→ Kafka
+→ Multiple Regions
+
+--------------------------------------------------------------------
+30 SECOND REVISION
+--------------------------------------------------------------------
+
+Client
+ |
+REST API
+ |
+API Gateway
+ |
+Comment Service
+ |
+--------------------------------
+|             |              |
+UserSvc    PostSvc      Cache
+ |
+Comment DB
+
+Operations
+
+POST   /comments
+GET    /comments
+GET    /comments/{id}
+PUT    /comments/{id}
+DELETE /comments/{id}
+POST   /comments/{id}/flag
+
+Database
+
+comment_id
+post_id
+user_id
+parent_comment_id
+text
+
+Security
+
+OAuth2
+OIDC
+JWT
+
+Scaling
+
+Stateless API
+Redis
+Read Replicas
+Kafka
+
+Reliability
+
+Replication
+Circuit Breakers
+Backups
+
+Latency
+
+Top Comments Cache
+Async Processing
+Geo Distributed Servers
+
+This cheat sheet covers ~90% of Comment API System Design interviews.
+====================================================================
