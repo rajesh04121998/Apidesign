@@ -1,0 +1,157 @@
+YOUTUBE DESIGN CHEAT SHEET
+
+1. Goal → Stream videos efficiently with low latency & high availability.
+2. Flow → Upload → Encode → Transcode → Segment → Store → CDN → User.
+
+3. Encoding = Compress raw media.
+4. Decoder = Decompress media at client.
+5. Video Codecs = H.264, H.265(HEVC), VP9, AV1.
+6. Audio Codecs = MP3, AAC, Dolby AC-3.
+
+7. Transcoding = Convert one video into multiple qualities.
+8. Example = 144p, 360p, 720p, 1080p, 4K.
+9. Purpose = Support different devices & bandwidths.
+
+10. Segmentation = Split video into chunks.
+11. Segment size = Usually 2–10 seconds.
+12. Benefit = Download only required chunks.
+
+13. ABR (Adaptive Bitrate) = Auto switch quality based on network.
+14. Example = 1080p → 720p → 480p during poor network.
+15. ABR requires Transcoding first.
+
+16. Buffering = Download future segments before playback.
+17. Low buffer → Lag.
+18. High buffer → Memory waste.
+
+19. Progressive Download = Download whole file.
+20. No ABR support.
+21. More buffering risk.
+
+22. Adaptive Streaming = Download segment by segment.
+23. Uses Manifest File.
+24. Preferred by YouTube & Netflix.
+
+25. Manifest File (MPD/M3U8) contains:
+26. Segment URLs.
+27. Available resolutions.
+28. Bitrates.
+29. Playback duration.
+30. Audio/Video metadata.
+31. Ad insertion information.
+
+32. Three Streaming Layers:
+33. Codec Layer → Compression.
+34. Container Layer → MP4, AVI, FLV.
+35. Transport Layer → HLS, DASH, RTMP, WebRTC.
+
+36. Main Components:
+37. API Gateway.
+38. Streaming Service.
+39. Encoding Service.
+40. Ad Service.
+41. User Data Service.
+42. Metadata DB.
+43. Blob Storage.
+44. CDN.
+
+45. Upload Workflow:
+46. User Uploads Video.
+47. Encoding + Transcoding.
+48. Segmentation.
+49. Store in Blob Storage.
+50. Push Popular Content to CDN.
+
+================ API DESIGN ================
+
+Base URL:
+api.youtube.com/v1.0/videos
+
+GET  /videos/{videoId}
+→ Fetch Manifest File
+
+GET  /playback?vidSegId={id}
+→ Fetch Video Segment
+
+GET  /playback?audSegId={id}
+→ Fetch Audio Segment
+
+POST /playback?cmdId={id}
+→ Playback Events (Play/Pause/Seek)
+
+GET  /videos/preview/{videoId}
+→ Trailer/Preview
+
+POST /videos
+→ Upload Video
+
+GET  /videos/search?query=xyz
+→ Search Videos
+
+POST /videos/{videoId}/comments
+→ Add Comment
+
+POST /videos/{videoId}/ratings
+→ Like/Dislike
+
+================ DESIGN DECISIONS ================
+
+Client → API Gateway = REST
+Gateway → Services = REST
+Protocol = HTTP/2
+Reason = Multiplexing + Compression + No HOL Blocking
+
+Media Format = Binary
+Metadata Format = JSON
+
+================ NON-FUNCTIONAL ================
+
+Scalability:
+- CDN
+- GGC (Google Global Cache)
+- Stateless Services
+- Horizontal Scaling
+
+Availability:
+- CDN Replication
+- Queueing
+- Circuit Breakers
+- Regional Edge Servers
+
+Security:
+- TLS 1.3
+- OAuth2 + PKCE
+- API Keys
+- Session IDs
+
+Performance:
+- Caching (ETag)
+- Compression (gzip/br)
+- Prefetching
+- ABR
+
+================ INTERVIEW QUESTIONS ================
+
+Q. Why Segment Videos?
+A. Faster loading, ABR support, less buffering.
+
+Q. Why HTTP/2?
+A. Multiplexing, compression, single TCP connection.
+
+Q. What if network drops?
+A. Client reconnects and requests missing segment.
+
+Q. What happens on Seek/Scrub?
+A. Client requests segment nearest to new timestamp.
+
+Q. Why CDN?
+A. Reduce latency and handle millions of viewers.
+
+Q. Is GET segment API idempotent?
+A. Yes.
+
+Q. Is POST playback event idempotent?
+A. Usually No.
+
+KEY FORMULA:
+Upload → Encode → Transcode → Segment → Manifest → CDN → Stream
