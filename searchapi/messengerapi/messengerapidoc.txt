@@ -1,0 +1,90 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    MESSENGER API DESIGN - QUICK SHEET                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DESCRIPTION                                                                 │
+│ A scalable real-time messaging system similar to Facebook Messenger that    │
+│ supports one-to-one chat, media sharing, message persistence, offline       │
+│ delivery, presence tracking, and multi-device synchronization.              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ DETAILS                                                                     │
+│                                                                              │
+│ 1. Core Components                                                          │
+│    • API Gateway - Authentication, authorization, throttling, caching.      │
+│    • Chat Server - Handles real-time message delivery.                      │
+│    • WebSocket Manager - Maintains user ↔ chat server mapping.              │
+│    • Presence Server - Tracks online/offline status using heartbeats.       │
+│    • Messaging Queue (Kafka/RabbitMQ) - Buffers messages, ensures           │
+│      reliability, decouples services.                                       │
+│    • User Data Service - User profiles and metadata.                        │
+│    • Asset Service - Upload/download media files.                           │
+│    • Message Service - Retrieves old messages for new devices.              │
+│    • Zookeeper - Service discovery and health monitoring.                   │
+│                                                                              │
+│ 2. Communication                                                            │
+│    • REST + HTTP/2 -> Login, User APIs, Asset APIs.                         │
+│    • WebSocket -> Real-time chat communication.                             │
+│    • Binary Format -> Media transfer.                                       │
+│    • JSON (UTF-8) -> Text messages.                                         │
+│                                                                              │
+│ 3. Message Flow                                                             │
+│    User A -> Chat Server 1 -> Message Queue -> Chat Server 2 -> User B      │
+│                                                                              │
+│    If User B Offline:                                                       │
+│    Chat Server -> Queue -> Database -> Deliver when user reconnects.        │
+│                                                                              │
+│ 4. Media Sharing Flow                                                       │
+│    Upload File -> Asset Service -> Blob Storage                             │
+│    Share Media URI in Chat -> Receiver Downloads via Asset Service          │
+│                                                                              │
+│ 5. WebSocket Connection                                                     │
+│    GET /v1.0/chat?encoding=text                                             │
+│    Connection: Upgrade                                                      │
+│    Upgrade: websocket                                                       │
+│    Response: 101 Switching Protocols                                        │
+│                                                                              │
+│ 6. APIs                                                                     │
+│    GET  /v1.0/messages/{userId}?after_id={id}&limit={count}                 │
+│    POST /asset                                                              │
+│    GET  /asset/{mediaFileId}                                                │
+│    GET  /v1.0/chat?encoding=text                                            │
+│                                                                              │
+│ 7. Message Fields                                                           │
+│    senderId                                                                 │
+│    receiverId                                                               │
+│    messageId                                                                │
+│    orderNumber                                                              │
+│    timestamp                                                                │
+│    messageText                                                              │
+│    attachmentUrl (optional)                                                 │
+│                                                                              │
+│ 8. Reliability Features                                                     │
+│    • Message Acknowledgement                                                │
+│    • Delivery Status                                                        │
+│    • Read Receipts                                                          │
+│    • Persistent Storage                                                     │
+│    • Offline Message Recovery                                               │
+│    • Multi-device Synchronization                                           │
+│                                                                              │
+│ 9. Common Error Codes                                                       │
+│    400 Bad Request                                                          │
+│    401 Unauthorized                                                         │
+│    403 Forbidden                                                            │
+│    404 Not Found                                                            │
+│    405 Method Not Allowed                                                   │
+│    413 Payload Too Large                                                    │
+│    426 Upgrade Required                                                     │
+│    500 Internal Server Error                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ EXAMPLE                                                                     │
+│ User A sends "Hello" to User B                                              │
+│                                                                              │
+│ 1. User A establishes WebSocket connection.                                 │
+│ 2. Chat Server assigns Message ID = 1001.                                  │
+│ 3. Message pushed to Kafka Queue.                                           │
+│ 4. Queue forwards message to User B's Chat Server.                          │
+│ 5. If online -> Delivered instantly.                                        │
+│ 6. If offline -> Stored in DB and marked undelivered.                       │
+│ 7. When User B reconnects, Presence Server detects heartbeat and            │
+│    pending messages are delivered.                                          │
+│ 8. Sender receives ACK, Delivered, and Read status updates.                 │
+└─────────────────────────────────────────────────────────────────────────────┘
