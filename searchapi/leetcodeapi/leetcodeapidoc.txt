@@ -1,0 +1,292 @@
+LEETCODE API CHEAT SHEET
+
+Topic -> Description -> Example
+
+1. LeetCode API
+-> Online coding platform API
+-> Problems, Contests, Interviews, Discussions
+
+2. Base URL
+-> Root endpoint for all services
+-> api.leetcode.com
+
+3. Main Services
+-> User, Problem, Contest, Interview, Discuss
+-> Core modules of LeetCode
+
+--------------------------------------------------
+USER SERVICE
+--------------------------------------------------
+
+4. Register User
+-> Create new account
+-> POST /users/register
+
+5. Login User
+-> Authenticate user
+-> POST /users/login
+
+6. User Profile
+-> Fetch user information
+-> GET /users/profile/{userId}
+
+7. User Data
+-> Stores user metadata
+-> Name, Email, Username, Ranking
+
+--------------------------------------------------
+PROBLEM SERVICE
+--------------------------------------------------
+
+8. List Problems
+-> Fetch coding problems
+-> GET /problems
+
+9. Search Problems
+-> Search by topic/category
+-> GET /problems?query=Graph
+
+10. Evaluate Code
+-> Run solution against test cases
+-> POST /problems/evaluate
+
+11. Problem Metadata
+-> Stores question details
+-> Difficulty, Tags, Acceptance Rate
+
+12. Code Execution Service
+-> Executes submitted code
+-> Docker Containers/Sandbox
+
+13. Evaluation Result
+-> Returns correctness result
+-> Passed 15/15 Test Cases
+
+--------------------------------------------------
+CONTEST SERVICE
+--------------------------------------------------
+
+14. Register Contest
+-> Enroll user into contest
+-> POST /contest/register
+
+15. Submit Code
+-> Submit contest solution
+-> POST /contest/submit
+
+16. Contest History
+-> View previous contests
+-> GET /contest/history
+
+17. Leaderboard
+-> Contest rankings
+-> GET /contest/leaderboard/{contestId}
+
+18. Contest Workflow
+-> Submit → Evaluate → Rank
+-> Updates leaderboard automatically
+
+19. Plagiarism Service
+-> Detect copied code
+-> Compare submissions
+
+20. Why 202 Accepted?
+-> Evaluation happens asynchronously
+-> Code queued for judging
+
+--------------------------------------------------
+INTERVIEW SERVICE
+--------------------------------------------------
+
+21. Schedule Interview
+-> Create interview session
+-> POST /interview/schedule
+
+22. Zoom Integration
+-> Provides video interview
+-> Zoom Meeting Link
+
+23. Live Coding
+-> Execute code during interview
+-> Uses Code Execution Service
+
+24. Interview Participants
+-> Interviewer + Candidate
+-> Shared coding environment
+
+--------------------------------------------------
+DISCUSS SERVICE
+--------------------------------------------------
+
+25. Create Topic
+-> Start discussion thread
+-> POST /discuss/topic
+
+26. Update Topic
+-> Modify discussion
+-> PUT /discuss/topic/{topicId}
+
+27. Delete Topic
+-> Remove discussion
+-> DELETE /discuss/topic/{topicId}
+
+28. Comment
+-> Reply on discussion
+-> POST /discuss/topic/comment
+
+29. Search Discussion
+-> Find topics/comments
+-> GET /discuss/comment?query
+
+30. Notifications
+-> Notify subscribers
+-> New comment alert
+
+--------------------------------------------------
+ARCHITECTURE
+--------------------------------------------------
+
+31. REST
+-> Client ↔ API Gateway communication
+-> GET /problems
+
+32. GraphQL
+-> API Gateway ↔ Backend Services
+-> Fetch user + contest + problem data in one query
+
+33. Event Driven
+-> Notifications and async processing
+-> Contest evaluation updates
+
+34. Why GraphQL?
+-> Single request for multiple services
+-> Reduces over-fetching
+
+35. Why REST for Clients?
+-> Simple and widely supported
+-> Easy CRUD operations
+
+--------------------------------------------------
+COMMUNICATION
+--------------------------------------------------
+
+36. HTTP/1.1
+-> Main communication protocol
+-> Request-response operations
+
+37. WebSub
+-> Notification protocol
+-> Contest result notification
+
+38. JSON
+-> Data exchange format
+-> User, Problem, Contest objects
+
+--------------------------------------------------
+SYSTEM COMPONENTS
+--------------------------------------------------
+
+39. Cache
+-> Stores frequently accessed data
+-> Popular problems
+
+40. Pub/Sub
+-> Event communication layer
+-> Contest submission processing
+
+41. Code Execution Service
+-> Executes code securely
+-> Containerized execution
+
+42. Metadata Service
+-> Stores performance records
+-> Contest scores, submissions
+
+--------------------------------------------------
+COMMON DATA ENTITIES
+--------------------------------------------------
+
+43. User
+-> userId, username, email
+
+44. Problem
+-> problemId, title, difficulty
+
+45. Contest
+-> contestId, name, rank
+
+46. Submission
+-> submittedCode, language, testCases
+
+47. Topic
+-> topicId, topicText
+
+48. Comment
+-> commentId, commentText
+
+49. Interview
+-> interviewerId, intervieweeId, schedule
+
+--------------------------------------------------
+IMPORTANT STATUS CODES
+--------------------------------------------------
+
+50. 200 OK
+-> Successful fetch/update
+
+51. 201 Created
+-> Resource created
+-> Register User, Register Contest
+
+52. 202 Accepted
+-> Processing asynchronously
+-> Submit Contest Code
+
+53. 400 Bad Request
+-> Invalid input
+
+54. 403 Forbidden
+-> No permission
+
+55. 404 Not Found
+-> Resource missing
+
+56. 500 Internal Server Error
+-> Server failure
+
+--------------------------------------------------
+INTERVIEW QUESTIONS
+--------------------------------------------------
+
+57. Difference: Evaluate vs Submit?
+
+Evaluate
+-> Practice Mode
+-> Immediate Result
+-> 200 OK
+
+Submit
+-> Contest Mode
+-> Async Processing
+-> 202 Accepted
+
+58. Why GraphQL instead of REST internally?
+
+-> Multiple services involved
+-> Single query can fetch all required data
+-> Lower latency
+
+59. Why Pub/Sub?
+
+-> Contest evaluation, notifications, interview events
+-> Loose coupling between services
+
+60. Why Containers?
+
+-> Secure code execution
+-> Isolation and scalability
+
+--------------------------------------------------
+ONE-LINE REVISION
+
+LeetCode = REST Client APIs + GraphQL Backend Communication + Pub/Sub Events + Code Execution Containers + Contest Evaluation + Interview Scheduling + Discussion Platform + JSON over HTTP/1.1.
