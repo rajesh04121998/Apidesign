@@ -1,0 +1,167 @@
+ZOOM API CHEAT SHEET
+
+Topic -> Description -> Example
+
+1. Zoom API
+-> Real-time video conferencing platform
+-> Meetings, Participants, Streaming, Recording
+-> Zoom/Google Meet/Microsoft Teams
+
+2. Functional Requirements
+-> Features user can perform
+-> Create meeting, Join meeting, Screen share, Record meeting
+
+3. Non-Functional Requirements
+-> System qualities
+-> Low latency, High availability, Scalability, Security
+
+4. Meeting Service
+-> Handles CRUD operations for meetings
+-> Create, Update, Delete, Schedule meetings
+
+5. Media Controller (MC)
+-> Controls meeting entry and routing
+-> Waiting room, Authentication, Assign nearest Media Router
+
+6. Media Router (MR)
+-> Transfers audio/video streams
+-> Forwards participant video streams
+
+7. Recording Service
+-> Stores conference recordings
+-> Convert recording to MP4 and save to storage
+
+8. Pub/Sub Service
+-> Event notification system
+-> "Recording Started", "Host Joined", "Meeting Ended"
+
+9. Blob Storage
+-> Stores large media files
+-> Meeting recordings
+
+10. Join Meeting Flow
+-> User validates URL/password and gets nearest controller
+-> GET /meetings/join
+
+11. Session Setup
+-> Client sends SDP information
+-> POST /streams/mc/start
+
+12. Start Conferencing
+-> Upgrade HTTP connection to WebSocket
+-> GET /streams/mr/start
+
+13. SDP (Session Description Protocol)
+-> Describes media session information
+-> Codec, IP, Port, Bandwidth
+
+14. Signaling
+-> Exchange session information before streaming
+-> SIP exchanging SDP
+
+15. SIP (Session Initiation Protocol)
+-> Creates, manages and terminates sessions
+-> Call setup before video starts
+
+16. WebRTC
+-> Peer-to-peer real-time communication protocol
+-> Browser video calling
+
+17. Peer-to-Peer
+-> Users communicate directly
+-> Low latency but O(n²) connections
+
+18. MCU (Multipoint Control Unit)
+-> Merges streams into one output stream
+-> Less bandwidth, higher processing
+
+19. SFU (Selective Forwarding Unit)
+-> Forwards streams without processing
+-> Better scalability, lower latency
+
+20. SSFU (Simulcast SFU)
+-> Sends multiple resolutions and adapts quality
+-> 360p, 720p, 1080p versions
+
+21. Architecture Style
+-> REST + Event Driven
+-> CRUD = REST, Streaming = Event Driven
+
+22. REST
+-> Request/Response operations
+-> Create Meeting, Update Meeting
+
+23. Event Driven
+-> Real-time events and notifications
+-> Participant joined, Recording started
+
+24. HTTP/2
+-> Used for CRUD APIs
+-> POST /meetings
+
+25. WebSocket
+-> Persistent bidirectional connection
+-> Audio/Video streaming
+
+26. WebSub
+-> Publisher-Subscriber notification protocol
+-> Meeting reminders, Alerts
+
+27. JSON
+-> Human-readable data format
+-> MeetingId, UserId, URL
+
+28. Binary
+-> Efficient machine-readable format
+-> Audio packets, Video frames
+
+29. Meeting APIs
+-> CRUD for meetings
+-> POST/GET/PATCH/DELETE /meetings
+
+30. Participant APIs
+-> Manage attendees
+-> POST/GET/DELETE /users
+
+31. Recording APIs
+-> Manage recordings
+-> POST/GET/DELETE /recordings
+
+32. Availability
+-> Meeting should continue despite failures
+-> Multiple Media Routers
+
+33. Reliability
+-> Consistent meeting experience
+-> Retry and failover mechanisms
+
+34. Security
+-> Protect meeting and users
+-> E2E Encryption, Access Tokens
+
+35. Scalability
+-> Handle millions of users
+-> Distributed Media Routers
+
+36. Latency
+-> Delay between sender and receiver
+-> Target <200ms
+
+37. Geographic Distribution
+-> Deploy media servers near users
+-> India users connect to India region server
+
+38. Why SFU over MCU?
+-> No transcoding, lower latency
+-> Used by Zoom
+
+39. Why WebSocket?
+-> Full duplex real-time communication
+-> Continuous video/audio transfer
+
+40. Why HTTP/2?
+-> Multiplexing and efficient connections
+-> Faster than HTTP/1.1
+
+FINAL REVISION:
+Zoom = REST APIs + HTTP/2 for CRUD + WebSocket for Streaming + Simulcast SFU for scalable video conferencing + Pub/Sub for notifications + Recording Service for cloud recordings.

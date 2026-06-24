@@ -155,3 +155,11 @@ A. Usually No.
 
 KEY FORMULA:
 Upload → Encode → Transcode → Segment → Manifest → CDN → Stream
+
+
+Live Streaming
+RTMP
+HLS
+RTMP is widely used for ingesting live streaming with the help of different encoders. So, it would be useful for sending the raw video to the server.
+
+HLS would be the best option for sending the video from the streaming server to the CDN. It provides the audience with ultra-high-quality streaming, and the stream is also secured. Furthermore, it is supported by all major browsers, as well as Android and iOS

@@ -1,0 +1,65 @@
+┌───────────────────────────────────────────────────────────────┐
+│ PUB-SUB API DESIGN CHEAT SHEET                               │
+├───────────────────────────────────────────────────────────────┤
+│ Pub-Sub                                                      │
+│ -> Messaging system where Publishers send events and         │
+│    Subscribers receive them through a Broker.               │
+│ Example: YouTube upload → Processing → Notification          │
+├───────────────────────────────────────────────────────────────┤
+│ Components                                                   │
+│ Publisher   -> Produces events                               │
+│ Subscriber  -> Consumes events                               │
+│ Broker      -> Routes events                                 │
+│ Topic       -> Category of events                            │
+│ Partition   -> Split topic for scalability                   │
+│ API Gateway -> Auth, Rate Limit, Routing                     │
+│ Storage     -> Stores topics, subscribers, event history     │
+│ Example:                                                    │
+│ Topic = "Orders"                                             │
+│ Event = "Order Created"                                      │
+└───────────────────────────────────────────────────────────────┘
+
+Client → API Gateway → PubSub Service → Subscribers
+
+REST
+-> Used for CRUD operations
+-> Create Topic, Subscribe, Unsubscribe, List Topics
+
+Example:
+GET /topics
+
+EDA (Event Driven Architecture)
+-> Used for sending notifications
+
+Example:
+Order Created Event
+→ Notify Inventory Service
+→ Notify Payment Service
+→ Notify Email Service
+
+
+Publisher → Topic → Broker → Subscriber
+
+REST APIs:
+POST   /topic
+GET    /topic
+PATCH  /topic
+DELETE /topic/{id}
+POST   /topic/event
+POST   /topic/subscribe
+POST   /topic/unsubscribe
+
+Protocol:
+Client ↔ Service = HTTP/1.1
+Service ↔ Subscriber = WebSub
+
+Storage:
+Topics
+Subscribers
+Event History
+
+Scaling:
+Topic Partitions + Broker Replication
+
+Key Benefit:
+Loose Coupling + Asynchronous Communication
